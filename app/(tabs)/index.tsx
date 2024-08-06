@@ -1,70 +1,142 @@
-import { Image, StyleSheet, Platform } from 'react-native';
+import React, { useState } from 'react';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView} from 'react-native';
+import { Colors } from '@/constants/Colors';
+import { router } from 'expo-router';
+import Logo2 from '@/components/Logo';
+import { AntDesign, MaterialIcons } from '@expo/vector-icons';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Chat from '@/components/homecomponent/Chats/Chat';
+import SearchBar from '@/components/homecomponent/SearchBar';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppDispatch } from '@/hooks/reduxhooks';
+import { setIsSuccess } from '@/redux/slice/LoginSlice';
+import FloatingBootmIcon from '@/components/homecomponent/FloatingBootmIcon';
 
-import { HelloWave } from '@/components/HelloWave';
-import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { ThemedText } from '@/components/ThemedText';
-import { ThemedView } from '@/components/ThemedView';
+const Home= () => {
 
-export default function HomeScreen() {
+    const [activeSection, setActiveSection] = useState('Chats');
+    const[searchTerm,setSearchTerm] = useState("");
+    const dispatch = useAppDispatch();
+    const handleLogout = async()=>{
+        await AsyncStorage.removeItem("tokenUserID");
+        dispatch(setIsSuccess(false));
+        router.replace("(onboarding)")
+    }
   return (
-    <ParallaxScrollView
-      headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
-      headerImage={
-        <Image
-          source={require('@/assets/images/partial-react-logo.png')}
-          style={styles.reactLogo}
-        />
-      }>
-      <ThemedView style={styles.titleContainer}>
-        <ThemedText type="title">Welcome!</ThemedText>
-        <HelloWave />
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 1: Try it</ThemedText>
-        <ThemedText>
-          Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
-          Press{' '}
-          <ThemedText type="defaultSemiBold">
-            {Platform.select({ ios: 'cmd + d', android: 'cmd + m' })}
-          </ThemedText>{' '}
-          to open developer tools.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 2: Explore</ThemedText>
-        <ThemedText>
-          Tap the Explore tab to learn more about what's included in this starter app.
-        </ThemedText>
-      </ThemedView>
-      <ThemedView style={styles.stepContainer}>
-        <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
-        <ThemedText>
-          When you're ready, run{' '}
-          <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
-          <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
-          <ThemedText type="defaultSemiBold">app-example</ThemedText>.
-        </ThemedText>
-      </ThemedView>
-    </ParallaxScrollView>
+    <SafeAreaView style={styles.container}>
+      <View style={styles.topHalf}>
+       <View >
+        <Logo2 />
+       </View>
+       <View style={styles.iconsContainer}>
+          <TouchableOpacity style={styles.iconButton}>
+            <AntDesign name='scan1' size={28} color='#222' />
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.iconButton} onPress={handleLogout}>
+            <MaterialIcons name='account-circle' size={28} color='#222' />
+          </TouchableOpacity>
+        </View>
+      </View>
+     
+      <View style={styles.bottomHalf}>
+        {/* <View style={styles.curve}></View> */}
+        <SearchBar onSearch={(data)=>setSearchTerm(data)}/>
+        <View style={styles.buttonsContainer}>
+          <TouchableOpacity
+            style={[styles.button, activeSection === 'Chats' && styles.activeButton]}
+            onPress={() => setActiveSection('Chats')}
+          >
+            <Text style={styles.buttonText}>Chats</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, activeSection === 'Groups' && styles.activeButton]}
+            onPress={() => setActiveSection('Groups')}
+          >
+            <Text style={styles.buttonText}>Groups</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            style={[styles.button, activeSection === 'Feed' && styles.activeButton]}
+            onPress={() => setActiveSection('Feed')}
+          >
+            <Text style={styles.buttonText}>Feed</Text>
+          </TouchableOpacity>
+        </View>
+        <ScrollView showsVerticalScrollIndicator={false}>
+          {activeSection==='Chats'&&<>
+            
+              <Chat onPress={()=>router.navigate('(stackScreens)/personalchat')}/>
+              
+          </>}
+        </ScrollView>
+       
+        <FloatingBootmIcon />
+        </View>
+    
+    </SafeAreaView>
   );
-}
+};
+
+export default Home;
 
 const styles = StyleSheet.create({
-  titleContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
+  container: {
+    flex: 1,
+    backgroundColor: Colors.light.green_background, // Overall background color
   },
-  stepContainer: {
-    gap: 8,
-    marginBottom: 8,
+  topHalf: {
+    // flex: 1,
+   
+    flexDirection:'row',
+    justifyContent:'space-between',
+    marginHorizontal:20,
+    backgroundColor: Colors.dark.green_background, // Top half background
+    
+     },
+
+  bottomHalf: {
+    flex: 1,
+    backgroundColor: 'white',
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
+    // paddingTop: 40,
+    paddingHorizontal: 20,
+    position: 'relative',
+    overflow: 'hidden',
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
+  curve: {
     position: 'absolute',
+    top: 20,
+    left: 0,
+    right: 0,
+    height: 50,
+    backgroundColor: Colors.dark.green_background,
+    borderBottomLeftRadius: 30,
+    borderBottomRightRadius: 30,
   },
+  iconsContainer:{
+    flexDirection:'row',
+    gap:20,
+    alignItems:"center",
+    
+  },
+  buttonsContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+  },
+  button: {
+    paddingVertical: 10,
+    flex: 1,
+    alignItems: 'center',
+  },
+  buttonText: {
+    fontSize: 16,
+    color: '#333',
+  },
+  activeButton: {
+    borderBottomWidth: 3,
+    borderBottomColor: Colors.dark.green_button,
+  },
+  iconButton:{
+
+  }
 });
