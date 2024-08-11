@@ -72,7 +72,7 @@ export const getContacts = () => async (dispatch: any) => {
     const { status } = await Contacts.requestPermissionsAsync();
     if (status === 'granted') {
       const { data } = await Contacts.getContactsAsync({
-        fields: [Contacts.Fields.PhoneNumbers],
+        fields: [Contacts.Fields.PhoneNumbers,Contacts.Fields.Name],
       });
 
       if (data.length > 0) {

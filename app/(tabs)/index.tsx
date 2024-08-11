@@ -11,9 +11,10 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { useAppDispatch } from '@/hooks/reduxhooks';
 import { setIsSuccess } from '@/redux/slice/LoginSlice';
 import FloatingBootmIcon from '@/components/homecomponent/FloatingBootmIcon';
+import { useSQLiteContext } from 'expo-sqlite';
 
 const Home= () => {
-
+    const db = useSQLiteContext();
     const [activeSection, setActiveSection] = useState('Chats');
     const[searchTerm,setSearchTerm] = useState("");
     const dispatch = useAppDispatch();
@@ -64,7 +65,7 @@ const Home= () => {
         <ScrollView showsVerticalScrollIndicator={false}>
           {activeSection==='Chats'&&<>
             
-              <Chat onPress={()=>router.navigate('(stackScreens)/personalchat')}/>
+              <Chat onPress={()=>router.navigate('(stackScreens)/123')}/>
               
           </>}
         </ScrollView>

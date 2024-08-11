@@ -18,6 +18,7 @@ const ChatScreen = ({ currentUser,chatPartner }) => {
   const tableName = `chat_${currentUser}_${chatPartner}`;
   const flatListRef = useRef(null);
   const dateTime = getCurrentDateTime();
+
   const fetchMessages = async () => {
     const chat = await db.getAllAsync(`SELECT * FROM ${tableName}`);
     console.log("The chat is ", chat);
@@ -40,6 +41,15 @@ const ChatScreen = ({ currentUser,chatPartner }) => {
           timestamp TEXT,
           seen BOOLEAN
         );
+        CREATE TABLE IF NOT EXISTS All_personal_chats (
+          id INTEGER PRIMARY KEY AUTOINCREMENT,
+          partnerTableId TEXT UNIQUE,
+          partnerID TEXT UNIQUE,
+          partnerProfileImage TEXT,
+          partnerLastMessage TEXT
+        );
+        INSERT INTO All_personal_chats (partnerTableId, partnerID, partnerProfileImage, partnerLastMessage) VALUES (${chatPartner.id},${chatPartner.contactUserId},${chatPartner.profilePicture},"")
+       
       `);
       console.log(response);
     };
@@ -92,16 +102,16 @@ const ChatScreen = ({ currentUser,chatPartner }) => {
         `INSERT INTO ${tableName} (sender, chatID, message, timestamp, seen) VALUES (?, ?, ?, ?, ?)`,
         [message.sender, message.chatID, message.message, message.timestamp, message.seen]
       );
+      // const insertIntoPartnerTable = await db.runAsync(
+
+      // )
       // console.log("Added data to database with ID:", insertedMessageId);
       console.log("the chages in dat base is ",insertedMessageId.changes); 
     });
     fetchMessages();
     // setMessages((prevMessages) => [...prevMessages, message]);
   };
-  const getAllDatabaseNames = async () => {
-    const databaseNames = await db.execAsync('SELECT name FROM sqlite_master WHERE type="table"');
-    console.log("Database names:", databaseNames);
-  };
+
 
 
   const sendMessage = () => {

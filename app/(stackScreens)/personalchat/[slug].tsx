@@ -1,15 +1,27 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, Image, TouchableOpacity, Modal, TextInput, ScrollView, ImageBackground } from 'react-native';
 import { Ionicons, MaterialIcons, FontAwesome } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Colors } from '@/constants/Colors';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import ChatScreen from '@/components/homecomponent/Chats/ChatContent';
+import { SQLiteProvider, useSQLiteContext } from 'expo-sqlite';
 
 const PersonalChat = () => {
+  const db = useSQLiteContext();
   const [modalVisible, setModalVisible] = useState(false);
   const [message, setMessage] = useState('');
+   const {slug} = useLocalSearchParams();
+  const[contactData,setContactData ]= useState(null);
+  useEffect(() => {
+    fetchContacts();
+  }, [slug]);
 
+  const fetchContacts = async() => {
+    const data = await db.getAllAsync(`SELECT * FROM Contacts WHERE id=${slug}`);
+    setContactData(data[0]);
+  };
+   console.log("the Paremeter data is ",contactData);
   // Example user data
   const userName = "John Doe";
   const profileImage = require('@/assets/images/image1.jpg'); // Replace with actual image URL
@@ -21,10 +33,12 @@ const PersonalChat = () => {
           <Ionicons name="arrow-back" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.profileContainer} onPress={() => setModalVisible(true)}>
-          <Image source={profileImage} style={styles.profileImage} />
+          <Image source={contactData?.profilePicture
+                    ? { uri: `data:image/png;base64,${contactData?.profilePicture}` }
+                    : require('@/assets/images/secure_chat.png')} style={styles.profileImage} />
         </TouchableOpacity>
         <View style={styles.headerTextContainer}>
-          <Text style={styles.userName}>{userName}</Text>
+          <Text style={styles.userName}>{contactData?.alias}</Text>
         </View>
         <View style={styles.headerIcons}>
           <TouchableOpacity style={[styles.iconButton,{backgroundColor:'#fff',padding:5,borderRadius:10,}]}>

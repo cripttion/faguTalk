@@ -27,7 +27,7 @@ const ContactsScreen = () => {
   const filteredContacts = contacts.filter(contact =>
     contact.alias.toLowerCase().includes(searchQuery.toLowerCase())
   );
-
+console.log(contacts);
   return (
     <SafeAreaView style={styles.container}>
       <Appbar.Header style={styles.header}>
@@ -68,7 +68,7 @@ const ContactsScreen = () => {
           data={filteredContacts}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity style={styles.contactItem}>
+            <TouchableOpacity onPress={()=>router.navigate(`personalchat/${item.id}`)} style={styles.contactItem}>
               <Avatar.Image
                 size={50}
                 source={
@@ -79,7 +79,7 @@ const ContactsScreen = () => {
               />
               <View style={styles.contactInfo}>
                 <Text style={styles.alias}>{item.alias}</Text>
-                <Text style={styles.phoneNumber}>{item.contactPhoneNumber}</Text>
+                <Text style={styles.phoneNumber}>{item.status}</Text>
               </View>
             </TouchableOpacity>
           )}
