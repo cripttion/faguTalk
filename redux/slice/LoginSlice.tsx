@@ -47,7 +47,28 @@ export const login = createAsyncThunk(
     }
   }
 );
-
+export const register = createAsyncThunk(
+  'register/user',
+  async (requestedData:any) => {
+    
+    try {
+      const url = `${API_URL}/user`;
+      console.log(url);
+      const response = await axios.post(url,requestedData);
+      console.log(response.data);
+      if (response.data.userId) {
+      
+        return response.data;
+      } else {
+        console.log(response.data.message);
+        throw new Error(response.data.message || 'Registration failed');
+      }
+    } catch (error) {
+      console.log(error.response?.data?.message)
+      throw new Error(error.response?.data?.message || 'An error occurred');
+    }
+  }
+);
 export const loginSlice = createSlice({
   name: 'login',
   initialState,
@@ -78,10 +99,26 @@ export const loginSlice = createSlice({
         state.isLoading = false;
         state.isError = action.error.message;
         ToastAndroid.show('Login failed', ToastAndroid.SHORT); // Show toast message on login failure
+      })
+      .addCase(register.pending, (state) => {
+        state.isLoading = true;
+        state.isError = null;
+        state.isSuccess = false;
+      })
+      .addCase(register.fulfilled, (state, action) => {
+        state.isLoading = false;
+        state.isSuccess = true;
+       
+      })
+      .addCase(register.rejected, (state, action) => {
+        state.isLoading = false;
+        state.isError = action.error.message;
+        ToastAndroid.show('Login failed', ToastAndroid.SHORT); // Show toast message on login failure
       });
   },
 });
 
 export const { setMobileNumber, setPassword,setIsSuccess } = loginSlice.actions;
+
 
 export default loginSlice.reducer;

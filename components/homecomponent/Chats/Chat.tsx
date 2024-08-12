@@ -2,15 +2,16 @@ import React, { useState } from 'react';
 import { View, Text, Image, StyleSheet, Modal, TouchableOpacity, Pressable } from 'react-native';
 import { AntDesign, FontAwesome, Ionicons, MaterialIcons } from '@expo/vector-icons';
 import { Colors } from '@/constants/Colors';
+import { Avatar } from 'react-native-paper';
 
-const Chat = ({onPress}) => {
+const Chat = ({onPress,data}) => {
   const [modalVisible, setModalVisible] = useState(false);
 
   // Example data, replace with actual data later
   const userName = "John Doe";
   const recentMessage = "Hey, how are you?";
   const lastMessageTime = "10:30 AM";
-  const unreadCount = 3;
+  const unreadCount = 0;
   const profileImage = require('@/assets/images/image1.jpg'); // Replace with image URL or null if not present
 
   const handleLongPress = () => {
@@ -22,18 +23,23 @@ const Chat = ({onPress}) => {
       <TouchableOpacity onLongPress={handleLongPress} onPress={onPress}>
         <View style={styles.container}>
           <View style={styles.profileContainer}>
-            {profileImage ? (
-              <Image source={profileImage} style={styles.profileImage} />
-            ) : (
-              <AntDesign name="user" size={40} color="gray" style={styles.profileIcon} />
-            )}
+          
+             <Avatar.Image
+             size={50}
+             source={
+               data?.partnerProfileImage
+                 ? { uri: `data:image/png;base64,${data?.partnerProfileImage}` }
+                 : require('@/assets/images/secure_chat.png')
+             }
+           />
+           
           </View>
           <View style={styles.textContainer}>
-            <Text style={styles.userName}>{userName}</Text>
-            <Text style={styles.recentMessage}>{recentMessage}</Text>
+            <Text style={styles.userName}>{data?.alias}</Text>
+            <Text style={styles.recentMessage}>{data?.partnerLastMessage}</Text>
           </View>
           <View style={styles.rightContainer}>
-            <Text style={styles.messageTime}>{lastMessageTime}</Text>
+            <Text style={styles.messageTime}>{data?.lastMessageTime}</Text>
             {unreadCount > 0 && (
               <View style={styles.unreadCountContainer}>
                 <Text style={styles.unreadCount}>{unreadCount}</Text>

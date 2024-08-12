@@ -69,8 +69,8 @@ const App = () => {
           );
         });
       
-       const response = await db.getAllAsync(`SELECT * FROM Contacts`);
-       console.log("the table shows is",response);
+      //  const response = await db.getAllAsync(`SELECT * FROM Contacts`);
+      //  console.log("the table shows is",response);
     } catch (error) {
       console.error('Failed to save contacts to database:', error);
     }
@@ -83,7 +83,7 @@ const App = () => {
   
       // Extract phone numbers from the fetched contacts
     //   const phoneNumbers = contactsResponse.map((contact: any) => contact.phoneNumbers.map((phone: any) => phone.number)).flat();
-      console.log(contactsResponse);
+      // console.log(contactsResponse);
       // Step 2: Add contacts to the database
       await dispatch(addContactsToTheDataBase(contactsResponse)).unwrap();
   
@@ -91,7 +91,7 @@ const App = () => {
       const contactsFromDbResponse = await dispatch(getContactsFromDatabase()).unwrap();
   
       const data = contactsFromDbResponse;
-      console.log(data);
+      // console.log(data);
   
       // Save contacts to the SQLite database
       await saveContactsToDatabase(data);

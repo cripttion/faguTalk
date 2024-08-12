@@ -5,18 +5,25 @@ import * as SQLite from 'expo-sqlite';
 import { Colors } from '@/constants/Colors';
 import { router } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const ContactsScreen = () => {
   const [contacts, setContacts] = useState([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [menuVisible, setMenuVisible] = useState(false);
-
+  const[userID,setUserID] = useState("");
   const db = SQLite.useSQLiteContext();
 
   useEffect(() => {
     fetchContacts();
   }, []);
-
+ useEffect(()=>{
+  const getUserID = async ()=>{
+     const userID = await AsyncStorage.getItem('tokenUserID');
+     setUserID(userID);
+  }
+  getUserID()
+ },[])
   const fetchContacts = async() => {
     const data = await db.getAllAsync('SELECT * FROM Contacts');
     setContacts(data);
@@ -27,7 +34,7 @@ const ContactsScreen = () => {
   const filteredContacts = contacts.filter(contact =>
     contact.alias.toLowerCase().includes(searchQuery.toLowerCase())
   );
-console.log(contacts);
+// console.log(contacts);
   return (
     <SafeAreaView style={styles.container}>
       <Appbar.Header style={styles.header}>
@@ -68,12 +75,12 @@ console.log(contacts);
           data={filteredContacts}
           keyExtractor={(item) => item.id.toString()}
           renderItem={({ item }) => (
-            <TouchableOpacity onPress={()=>router.navigate(`personalchat/${item.id}`)} style={styles.contactItem}>
+            <TouchableOpacity onPress={()=>router.navigate(`personalchat/${item.contactUserId}`)} style={styles.contactItem}>
               <Avatar.Image
                 size={50}
                 source={
-                  item.profilePhoto
-                    ? { uri: `data:image/png;base64,${item.profilePhoto}` }
+                  item.profilePicture
+                    ? { uri: `data:image/png;base64,${item.profilePicture}` }
                     : require('@/assets/images/secure_chat.png')
                 }
               />

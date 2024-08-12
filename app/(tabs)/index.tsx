@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TextInput, TouchableOpacity, ScrollView} from 'react-native';
 import { Colors } from '@/constants/Colors';
-import { router } from 'expo-router';
+import { router, useFocusEffect } from 'expo-router';
 import Logo2 from '@/components/Logo';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,17 +12,37 @@ import { useAppDispatch } from '@/hooks/reduxhooks';
 import { setIsSuccess } from '@/redux/slice/LoginSlice';
 import FloatingBootmIcon from '@/components/homecomponent/FloatingBootmIcon';
 import { useSQLiteContext } from 'expo-sqlite';
+import { getContacts } from '@/redux/slice/ActionsSlice';
 
 const Home= () => {
     const db = useSQLiteContext();
     const [activeSection, setActiveSection] = useState('Chats');
     const[searchTerm,setSearchTerm] = useState("");
+    const [allChats,setAllChats] =useState([]);
     const dispatch = useAppDispatch();
+ 
     const handleLogout = async()=>{
         await AsyncStorage.removeItem("tokenUserID");
         dispatch(setIsSuccess(false));
         router.replace("(onboarding)")
     }
+
+
+  
+    useFocusEffect(
+      useCallback(() => {
+        fetchContacts();
+      }, [])
+    );
+    const fetchContacts = async () => {
+      try {
+        const data = await db.getAllAsync(`SELECT * FROM All_personal_chats`);
+        
+        setAllChats(data);
+      } catch (error) {
+        console.error("Error fetching contact data:", error);
+      }
+    };
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.topHalf}>
@@ -64,8 +84,10 @@ const Home= () => {
         </View>
         <ScrollView showsVerticalScrollIndicator={false}>
           {activeSection==='Chats'&&<>
-            
-              <Chat onPress={()=>router.navigate('(stackScreens)/123')}/>
+            {allChats&&allChats?.map((data,index)=>(
+
+              <Chat data={data} key={index} onPress={()=>router.navigate(`(stackScreens)/personalchat/${data?.partnerID}`)}/>
+            ))}
               
           </>}
         </ScrollView>

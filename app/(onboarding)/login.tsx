@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView } from 'react-native';
+import { StyleSheet, Text, View, TextInput, TouchableOpacity, SafeAreaView, ToastAndroid } from 'react-native';
 import { Colors } from '@/constants/Colors';
 import Loginsvg from '@/assets/svg/welcome.svg'; // Replace with your actual SVG import
 import { router } from 'expo-router';
@@ -19,15 +19,15 @@ const Login = () => {
   const handleLogin = async () => {
     await dispatch(setMobileNumber(mobileNumber));
     await dispatch(setPassword(password));
-    await dispatch(login());
+    const response =  await dispatch(login()).unwrap();
+   if(response.status==="200")
+   {
+     ToastAndroid.show('Login sucessfull',ToastAndroid.SHORT);
+     router.navigate("(stackScreens)/firstLoadingScreen");
+   }
     
   }
-  useEffect(()=>{
-      if(isSuccess)
-      {
-        router.replace("(stackScreens)/firstLoadingScreen");
-      }
-  },[isSuccess])
+
 
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
