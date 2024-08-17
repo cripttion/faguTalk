@@ -13,7 +13,10 @@ import {
   Alert,
 } from "react-native";
 import { getCurrentDateTime } from "@/helper/CurrentDataAndTime";
+import{getTableName} from '@/helper/CreatingTableName';
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import PhotoCapture from "./PhotoCapture";
+import { SOCKET_URL } from "@/constants/ApiRoutes";
 // Open database connection
 interface Todo {
   value: string;
@@ -22,88 +25,88 @@ interface Todo {
 const ChatScreen = ({ chatPartner }) => {
   const db = useSQLiteContext();
   const [messages, setMessages] = useState([]);
+  const[messageType,setMessageType] = useState("Text");
   const [input, setInput] = useState("");
   const [ws, setWs] = useState(null);
-  const [version, setVersion] = useState("");
   const [tableName, setTableName] = useState("");
   const [userID, setUserID] = useState("");
   const [connnectId, setConnectID] = useState("");
-  // const tableName = `chat_${currentUser}_${chatPartner}`;
   const flatListRef = useRef(null);
   const dateTime = getCurrentDateTime();
+  const [openCamera,setOpenCamera] = useState(false);
+   const fetchMessages = async () => {
 
-  const fetchMessages = async () => {
-    const userID = await AsyncStorage.getItem("tokenUserID");
-    const currentUserID = userID.split("-")[4];
-    const chatPartnerUserID = chatPartner.contactUserId.split("-")[4];
-    const tableNameTemp = `chat_${currentUserID}_${chatPartnerUserID}`;
-    const chat = await db.getAllAsync(`SELECT * FROM ${tableNameTemp}`);
+    const {userID,chatTableName} = await getTableName(chatPartner);
+    console.log("the chat tbael nais isd,",chatTableName)
+    const chat = await db.getAllAsync(`SELECT * FROM ${chatTableName}`);
 
     setMessages(chat);
   };
 
   useEffect(() => {
     const createTableName = async () => {
-      const userID = await AsyncStorage.getItem("tokenUserID");
+      const { userID,chatTableName} = await getTableName(chatPartner);
+      console.log("the reakdf",userID,chatTableName);
       setUserID(userID);
-      const currentUserID = userID.split("-")[4];
-      const chatPartnerUserID = chatPartner.contactUserId.split("-")[4];
-      const tableNameTemp = `chat_${currentUserID}_${chatPartnerUserID}`;
-      const connecttem = `chat_${chatPartnerUserID}_${currentUserID}`;
+      const connecttem = chatTableName;
       setConnectID(connecttem.replace(/_/g, "").split("").sort().join(""));
-      setTableName(tableNameTemp);
+      setTableName(chatTableName);
     };
     createTableName();
   }, [chatPartner]);
+
   useEffect(() => {
     const createTable = async () => {
-      const response = await db.execAsync(`
-        PRAGMA journal_mode = WAL;
-        CREATE TABLE IF NOT EXISTS ${tableName} (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          sender TEXT,
-          chatID TEXT,
-          message TEXT,
-          timestamp TEXT,
-          seen BOOLEAN
-        );
-        CREATE TABLE IF NOT EXISTS All_personal_chats (
-          id INTEGER PRIMARY KEY AUTOINCREMENT,
-          partnerTableId TEXT UNIQUE,
-          partnerID TEXT UNIQUE,
-          partnerProfileImage TEXT,
-          partnerLastMessage TEXT,
-          alias TEXT,
-          lastMessageTime Text
-        );
-        INSERT OR IGNORE INTO All_personal_chats (partnerTableId, partnerID, partnerProfileImage, partnerLastMessage, alias, lastMessageTime) VALUES ('${chatPartner.id}','${chatPartner.contactUserId}','${chatPartner.profilePicture}',' ','${chatPartner.alias}','');
-       
-      `);
-      console.log(response);
+      try {
+        await db.execAsync(`
+          PRAGMA journal_mode = WAL;
+          CREATE TABLE IF NOT EXISTS ${tableName} (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            sender TEXT,
+            chatID TEXT,
+            message TEXT,
+            timestamp TEXT,
+            seen BOOLEAN
+          );
+          CREATE TABLE IF NOT EXISTS All_personal_chats (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            partnerTableId TEXT UNIQUE,
+            partnerID TEXT UNIQUE,
+            partnerProfileImage TEXT,
+            partnerLastMessage TEXT,
+            alias TEXT,
+            lastMessageTime Text
+          );
+          INSERT OR IGNORE INTO All_personal_chats (partnerTableId, partnerID, partnerProfileImage, partnerLastMessage, alias, lastMessageTime) VALUES ('${chatPartner.id}','${chatPartner.contactUserId}','${chatPartner.profilePicture}',' ','${chatPartner.alias}','');
+        `);
+      } catch (error) {
+        console.error("Error creating tables:", error);
+      }
     };
 
-    createTable();
-
-    fetchMessages();
+    if (tableName) {
+      createTable();
+      fetchMessages();
+    }
   }, [tableName]);
   useEffect(() => {
-    if(connnectId!="")
-    {
+    //  `ws://192.168.131.144:8080/chat?user=${connnectId}`
+    if (connnectId != "") {
       const socket = new WebSocket(
-        `ws://192.168.246.144:8080/chat?user=${connnectId}`
+       `${SOCKET_URL}/chat?user=${connnectId}`
       );
       socket.onopen = () => {
         console.log(
           "wer are connect on ",
-          `ws://192.168.246.144:8080/chat?user=${connnectId}`
+          `${SOCKET_URL}/chat?user=${connnectId}`
         );
       };
-  
+
       socket.onmessage = (event) => {
         console.log("The Evenet is ==>>", event);
         const message = JSON.parse(event.data);
         console.log(message);
-  
+
         saveMessage(message);
       };
       socket.onerror = (error) => {
@@ -113,15 +116,13 @@ const ChatScreen = ({ chatPartner }) => {
           "An error occurred with the WebSocket connection."
         );
       };
-  
+
       setWs(socket);
-  
+
       return () => {
         socket.close();
       };
     }
-    
-    
   }, [connnectId]);
 
   useEffect(() => {
@@ -132,36 +133,34 @@ const ChatScreen = ({ chatPartner }) => {
   }, [messages]);
 
   const saveMessage = async (message) => {
-    // Use correct table name for insertion
-
-    await db.withTransactionAsync(async () => {
-      const insertedMessageId = await db.runAsync(
-        `INSERT INTO ${tableName} (sender, chatID, message, timestamp, seen) VALUES (?, ?, ?, ?, ?)`,
-        [
+    try {
+      const {userID,chatTableName} =await getTableName(chatPartner);
+      await db.withTransactionAsync(async () => {
+        const query = `
+  INSERT INTO ${chatTableName} (sender, chatID, message, timestamp, seen) 
+  VALUES (?, ?, ?, ?, ?)
+`;
+        console.log(query);
+        const insertedMessageId = await db.runAsync(query, [
           message.sender,
           message.chatID,
           message.message,
           message.timestamp,
           message.seen,
-        ]
-      );
-      // const insertIntoPartnerTable = await db.runAsync(
-      const updatedpersonalTable = await db.runAsync(
-        `UPDATE All_personal_chats 
-           SET partnerLastMessage = ?, lastMessageTime = ?
-           WHERE partnerID = ?`,
-        [message.message, message.timestamp, chatPartner.contactUserId]
-      );
-      // )
-      // console.log("Added data to database with ID:", insertedMessageId);
-      console.log(
-        "the chages in dat base is ",
-        insertedMessageId.changes,
-        updatedpersonalTable.changes
-      );
-    });
-    fetchMessages();
-    // setMessages((prevMessages) => [...prevMessages, message]);
+        ]);
+
+        const updatedpersonalTable = await db.runAsync(
+          `UPDATE All_personal_chats 
+             SET partnerLastMessage = ?, lastMessageTime = ?
+             WHERE partnerID = ?`,
+          [message.message, message.timestamp, chatPartner.contactUserId]
+        );
+      });
+
+      fetchMessages(); // Only call this after the transaction is complete
+    } catch (error) {
+      console.error("Error saving message:", error);
+    }
   };
 
   const sendMessage = () => {
@@ -177,7 +176,7 @@ const ChatScreen = ({ chatPartner }) => {
     setInput("");
   };
   // console.log("The messageIs", messages);
-  // console.log(tableName);
+  console.log(chatPartner?.contactUserId);
   return (
     <View style={styles.container}>
       <FlatList
@@ -203,7 +202,7 @@ const ChatScreen = ({ chatPartner }) => {
       />
 
       <View style={styles.inputContainer}>
-        <TouchableOpacity style={styles.iconButton}>
+        <TouchableOpacity style={styles.iconButton} onPress={()=>setOpenCamera(true)}>
           <MaterialIcons name="camera-alt" size={24} color="black" />
         </TouchableOpacity>
         <TouchableOpacity style={styles.iconButton}>
@@ -219,6 +218,13 @@ const ChatScreen = ({ chatPartner }) => {
           <FontAwesome name="send" size={24} color="white" />
         </TouchableOpacity>
       </View>
+      {openCamera && 
+      <View style={styles.camera}><PhotoCapture setData={(data)=>{
+        setInput(data);
+        setMessageType("Image");
+      }} closeCamera={setOpenCamera} />
+      </View>
+      }
     </View>
   );
 };
@@ -287,6 +293,15 @@ const styles = StyleSheet.create({
   messageText: {
     color: "#222",
   },
+  camera:{
+    position:'absolute',
+    top:0,
+    bottom:0,
+    left:0,
+    right:0,
+    // flex:1
+    
+  }
 });
 
 export default ChatScreen;
